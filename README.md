@@ -1,4 +1,7 @@
 # KnowHowSite_parser
+
+![flake8 test](https://github.com/Prrromanssss/KnowHowSite_parser/actions/workflows/python-package.yml/badge.svg)
+
 This project parse site of electronics "Know-How" and write data to folder of csv files
 
 This was the task of Yandex Practicum
@@ -31,7 +34,10 @@ source venv/bin/activate
 
 ### 3. Installation all requirements
 
-3.3 All libraries in this project are built-in.
+3.3 Run this command 
+```commandline
+pip install -r requirements.txt
+```
 
 
 ### 4. Running project
