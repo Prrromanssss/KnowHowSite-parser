@@ -34,7 +34,10 @@ source venv/bin/activate
 
 ### 3. Installation all requirements
 
-3.3 All libraries in this project are built-in.
+3.3 Run this command 
+```commandline
+pip install -r requirements.txt
+```
 
 
 ### 4. Running project
