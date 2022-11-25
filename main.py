@@ -79,7 +79,7 @@ def take_hrefs_of_objects(headers, html):
     for folder in headers:
         with open(f'headers/{folder}/{html}.html') as file:
             src = file.read()
-            soup = BeautifulSoup(src, 'lxml')
+            soup = BeautifulSoup(src, 'html.parser')
             content = soup.find('ul', class_='catalog_nodes').find_all('a')
             all_content[folder].extend(content)
 
@@ -113,7 +113,7 @@ def load_all_pages(folder, html, src, namefile, count=1):
     """
     with open(f'headers/{folder}/{html}', 'w') as file:
         file.write(src)
-        soup = BeautifulSoup(src, 'lxml')
+        soup = BeautifulSoup(src, 'html.parser')
         try:
             print(soup.find('ul', class_='pager').find_all('li')[-1])
         except AttributeError:  # It means that this page is single
@@ -203,7 +203,7 @@ def write_in_csv():
                         continue
                     with open(f'headers/{folder}/{file}') as rfile:
                         src = rfile.read()
-                    soup = BeautifulSoup(src, 'lxml').find(
+                    soup = BeautifulSoup(src, 'html.parser').find(
                         'ul',
                         class_='catalog_items'
                         ).find_all('li')
@@ -215,13 +215,26 @@ def write_in_csv():
                                 ):
                             continue
                         data = {}
-                        href_of_page = f'{url}/{li.find("div", class_="catalog_item hoverable catalog_item_ops_bottom catalog_item_simplified").find("a", class_="catalog_item_link")["href"]}'
-                        req = requests.get(href_of_page, headers=headers_for_req)
+                        href_of_page = (
+                            f'''{url}/'
+                            {li.find(
+                                "div",
+                                class_="catalog_item hoverable"
+                                       "catalog_item_ops_bottom"
+                                       "catalog_item_simplified").
+                            find("a", class_="catalog_item_link")["href"]}'''
+                        )
+                        req = requests.get(
+                            href_of_page,
+                            headers=headers_for_req
+                        )
                         src = req.text
-                        soup = BeautifulSoup(src, 'lxml')
+                        soup = BeautifulSoup(src, 'html.parser')
                         print(href_of_page)
-                        data['Категория'] = safe_print(f"{folder}")
-                        data['Название'] = safe_print(f"{soup.find('h1').text}")
+                        data['Категория'] = safe_print(f'{folder}')
+                        data['Название'] = safe_print(
+                            f'{soup.find("h1").text}'
+                        )
                         if data['Название'] in [
                             'Ноутбуки MSI',
                             'Все варианты Lenovo IdeaCentre 5 24IOB6',
@@ -235,24 +248,37 @@ def write_in_csv():
                                 'div',
                                 class_='catalog_brand_more'
                                 ).find('a')
-                            data['Все товары от бренда'] = safe_print(f"{url}/{href['href']}")
+                            data['Все товары от бренда'] = safe_print(
+                                f'{url}/{href["href"]}'
+                                )
                         except AttributeError:
                             data['Все товары от бренда'] = '-'
                         try:
                             data['Фото'] = safe_print(
-                                f"{url}{soup.find('div', class_='media_display').find('img')['src']}")
+                                f'''{url}{soup.find(
+                                    'div',
+                                    class_='media_display').
+                                    find('img')['src']}'''
+                                )
                         except (TypeError, AttributeError):
                             data['Фото'] = '-'
                         data['Преимущество'] = safe_print(
-                            f"{soup.find('div', class_='catalog_variant_specs').text}")
+                            f'''{soup.find(
+                                'div',
+                                class_='catalog_variant_specs').text}'''
+                                )
                         href = soup.find(
                             'ul',
                             class_='catalog_variant_addon_other'
                             ).find('a')
                         try:
-                            base_charac = \
-                            f"{soup.find('div', class_='catalog_variant_addon_characteristics').text}".split(':')[
-                                -1]
+                            base_charac = (
+                                f'''{soup.find(
+                                    'div',
+                                    class_=''
+                                    'catalog_variant_addon_characteristics')
+                                    .text}'''.split(':')[-1]
+                                )
                             base_charac = base_charac.split('•')
                             base_rest = base_charac[:]
                         except AttributeError:
@@ -261,30 +287,55 @@ def write_in_csv():
                         '''Details for each category'''
                         count = 0
                         for char in range(len(base_charac)):
-                            if 'Android' in base_charac[char] or 'OS' in base_charac[char] or 'Windows' in \
-                                    base_charac[char]:
+                            if (
+                                'Android' in base_charac[char]
+                                or 'OS' in base_charac[char]
+                                or 'Windows' in
+                                    base_charac[char]
+                            ):
                                 data['ОС'] = safe_print(f"{base_charac[char]}")
                                 base_rest.remove(base_charac[char])
                             elif 'яд' in base_charac[char]:
                                 if 'ГГц' in base_charac[char]:
-                                    data['Частота и количество ядер процессора'] = safe_print(
-                                        f"{', ('.join(base_charac[char].split('('))}")
+                                    data[
+                                        'Частота и количество ядер процессора'
+                                        ] = safe_print(
+                                        f'''{', ('.join(base_charac[char]
+                                                  .split('('))}'''
+                                            )
                                 else:
-                                    data['Частота и количество ядер процессора'] = safe_print(
+                                    data[
+                                        'Частота и количество ядер процессора'
+                                        ] = safe_print(
                                         f"- , {base_charac[char]}")
                                 base_rest.remove(base_charac[char])
                                 count += 1
-                            elif 'RAM' in base_charac[char] and 'Гб' in base_charac[char]:
+                            elif (
+                                'RAM' in base_charac[char] and
+                                'Гб' in base_charac[char]
+                            ):
                                 data['RAM'] = safe_print(
-                                    f"{base_charac[char].strip()[base_charac[char].strip().rindex('M') + 2:]}")
+                                    f'''{base_charac[char].strip()
+                                        [base_charac[char].strip()
+                                        .rindex('M') + 2:]}'''
+                                        )
                                 base_rest.remove(base_charac[char])
                                 count += 1
-                            elif (((('SSD' in base_charac[char] and 'Гб' in base_charac[char])
-                                    or 'SSD' in base_charac[char] and 'Мб' in base_charac[
-                                        char]) and folder == 'Ноутбуки')
-                                  or (folder == 'Смартфоны' and 'RAM' not in base_charac[char] and 'Гб' in
-                                      base_charac[char])):
-                                data['Память'] = safe_print(f"{base_charac[char]}")
+                            elif (
+                                (((
+                                    'SSD' in base_charac[char] and
+                                    'Гб' in base_charac[char]
+                                    )
+                                    or 'SSD' in base_charac[char] and
+                                    'Мб' in base_charac[char]) and
+                                    folder == 'Ноутбуки')
+                                    or (folder == 'Смартфоны' and
+                                        'RAM' not in base_charac[char] and
+                                        'Гб' in base_charac[char])
+                                    ):
+                                data['Память'] = safe_print(
+                                    f'{base_charac[char]}'
+                                    )
                                 base_rest.remove(base_charac[char])
                                 count += 1
                             if count == 4:
@@ -297,16 +348,43 @@ def write_in_csv():
                         ]:
                             if category not in data:
                                 data[category] = '-'
-                        data['Остальные характеристики'] = safe_print(f"{'•'.join(base_rest)}")
-                        data[f'Все характеристики'] = safe_print(f"{url}{href['href']}")
-                        data['Описание'] = safe_print(
-                            f"{soup.find('div', class_='catalog_variant_description').text}")
-                        data['Код товара'] = safe_print(
-                            f"{soup.find('div', class_='catalog_variant2_statehead_code gray').find('b').text}")
-                        data['Цена'] = safe_print(
-                            f"{soup.find('ul', class_='catalog_variant_state_left').find('strong').text}")
-                        data['Баллы за покупку'] = safe_print(
-                            f"{soup.find('li', class_='catalog_variant2_profit_item catalog_variant2_profit_item_bonus').find('span').text}")
+                        data[
+                            'Остальные характеристики'
+                            ] = safe_print(f"{'•'.join(base_rest)}")
+                        data[
+                            'Все характеристики'
+                            ] = safe_print(f"{url}{href['href']}")
+                        data[
+                            'Описание'
+                            ] = safe_print(
+                                f'''{soup.find(
+                                    'div',
+                                    class_='catalog_variant_description')
+                                    .text}'''
+                                    )
+                        data[
+                            'Код товара'
+                            ] = safe_print(
+                                f'''{soup.find('div',
+                                class_='catalog_variant2_statehead_code gray')
+                                .find('b').text}'''
+                                )
+                        data[
+                            'Цена'
+                            ] = safe_print(
+                                f'''{soup.find(
+                                    'ul',
+                                    class_='catalog_variant_state_left')
+                                    .find('strong').text}'''
+                                    )
+                        data[
+                            'Баллы за покупку'
+                            ] = safe_print(f'''{soup.find(
+                                'li',
+                                class_='catalog_variant2_profit_item'
+                                'catalog_variant2_profit_item_bonus')
+                                .find('span').text}'''
+                                           )
                         data['Ссылка на товар'] = safe_print(href_of_page)
                         writer.writerow(data)
                         count1 += 1
@@ -321,8 +399,17 @@ def main():
     with open('index.html') as file:
         src = file.read()
     soup = BeautifulSoup(src, 'html.parser')
-    all_categories = soup.find('ul', class_='header_groups').find_all('a', class_='popup_handle header_group')
-    all_categories = list(filter(lambda x: 'Apple' not in str(x) and 'Аксессуары' not in str(x), all_categories))
+    all_categories = soup.find(
+        'ul', class_='header_groups').find_all(
+        'a',
+        class_='popup_handle header_group'
+        )
+    all_categories = list(
+        filter(
+            lambda x: 'Apple' not in str(x) and 'Аксессуары' not in str(x),
+            all_categories
+            )
+        )
     create_html_each_folder()
     take_hrefs_of_objects(headers=headers, html='index')
     create_first_page_obj_each_folder()
@@ -401,7 +488,7 @@ names_obj = {
 fieldnames = [
     'Категория',
     'Название',
-    'Все товары от бренда',        
+    'Все товары от бренда',
     'Фото',
     'Преимущество',
     'ОС',
